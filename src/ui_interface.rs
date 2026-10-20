@@ -409,7 +409,9 @@ pub fn get_sound_inputs() -> Vec<String> {
 }
 
 #[inline]
-pub fn set_options(m: HashMap<String, String>) {
+pub fn set_options(mut m: HashMap<String, String>) {
+    m.remove(OPTION_CUSTOM_RENDEZVOUS_SERVER);
+    m.remove(OPTION_KEY);
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         *OPTIONS.lock().unwrap() = m.clone();
@@ -421,6 +423,9 @@ pub fn set_options(m: HashMap<String, String>) {
 
 #[inline]
 pub fn set_option(key: String, value: String) {
+    if key == OPTION_CUSTOM_RENDEZVOUS_SERVER || key == OPTION_KEY {
+        return;
+    }
     if &key == "stop-service" {
         #[cfg(target_os = "macos")]
         {

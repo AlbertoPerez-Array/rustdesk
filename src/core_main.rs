@@ -36,6 +36,11 @@ fn finish_macos_update(result: hbb_common::ResultType<()>) -> Option<CoreMainAct
     }
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+fn apply_builtin_server_config() {
+    // >>> NEUTRALIZADO-TEMP-VT: RESTAURAR host/key remoto.arraylevante antes de repartir <<<
+}
+
 /// shared by flutter and sciter main function
 ///
 /// [Note]
@@ -47,6 +52,7 @@ pub fn core_main() -> Option<CoreMainAction> {
         return None;
     }
     crate::load_custom_client();
+    apply_builtin_server_config();
     #[cfg(windows)]
     if !crate::platform::windows::bootstrap() {
         // return None to terminate the process
@@ -496,13 +502,15 @@ pub fn core_main() -> Option<CoreMainAction> {
                     };
                     if let Ok(lic) = crate::custom_server::get_custom_server_from_string(&name) {
                         if !lic.host.is_empty() {
-                            crate::ui_interface::set_option("key".into(), lic.key);
-                            crate::ui_interface::set_option(
-                                "custom-rendezvous-server".into(),
-                                lic.host,
+                            // bypass ui_interface, which blocks these two keys for the UI
+                            crate::ipc::set_option(keys::OPTION_KEY, &lic.key);
+                            crate::ipc::set_option(
+                                keys::OPTION_CUSTOM_RENDEZVOUS_SERVER,
+                                &lic.host,
                             );
                             crate::ui_interface::set_option("api-server".into(), lic.api);
                             crate::ui_interface::set_option("relay-server".into(), lic.relay);
+                            crate::ui_interface::refresh_options();
                         }
                     }
                 } else {
